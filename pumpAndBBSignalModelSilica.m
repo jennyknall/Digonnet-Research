@@ -40,9 +40,7 @@ g1 = 4;
 core_radius = 3.1e-6; 
 Area = pi*core_radius^2; %m^2, pump area
 tauRad = 0.85e-3;
-tauNonRad = 5e-3;%211.65e-3;%1e10;%
-tauRatio = tauRad/tauNonRad;
-tau = tauRad*tauNonRad/(tauRad+tauNonRad);
+%tauNonRad = 1e8;%211.65e-3;%1e10;%
 c = 3e8;
 h = 6.63e-34; %J*s
 kT = 4.11e-21; %J
@@ -99,9 +97,14 @@ etta = 1-exp(-2*core_radius^2/w^2);
 
 N0_wtPercent = 2.71;%[0.00005:.00005:.001 .001:.005:.1 .1:.1:3 3:15];
 N0 = N0_wtPercent/2.71*1.81e26;  %m^-3
+%Nc = .75e26; %m^-3 for silica from Mafi's presentation at PW
+Nc = 9.917e25; %m^-3 for silica
+tauNonRad = 2*pi/9*tauRad*(Nc/N0)^2;%67.6e-3;%211.65e-3;%1e10;%
+tauRatio = tauRad/tauNonRad;
+tau = tauRad*tauNonRad/(tauRad+tauNonRad);
 f = 1/Area;
 gamma = 1;
-totLoss = 0.02; %dB/m
+totLoss = 0.00; %dB/m
 loss_b = totLoss/etta*log(10)/10; %m^-1
 loss_bs = loss_b/4;%m^-1
 loss_ba = 3*loss_b/4+43.8;%0; %m^-1
@@ -115,6 +118,7 @@ PsatS = IsatS*pi*w^2/2;
 Am = pi*w^2/2;
 
 maxLoss = etta*cs_aP*N0*(tau/tauRad*freqF_SE/freqP-1)*10/log(10); %dB/m
+N0max = Nc*sqrt(2*pi/9*(lambdaP/lambdaF_SE/(loss_b/cs_aP/N0+1)-1))/1.81e26;
 
 % V = 1:0.01:10;
 % w = core_radius*(0.65+1.619./V.^1.5+2.879./V.^6);

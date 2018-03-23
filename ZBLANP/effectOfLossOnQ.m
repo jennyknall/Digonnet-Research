@@ -4,14 +4,14 @@
 %Automatically discards signal wavelengths for which gain is too low
 %includes non-radiative term and loss
 
-close all;
+%close all;
 clear all;
 
 % NPL(index) = interp1(dQz_dt2(:,1),lossdB,dQz_dt2(1,1)*0.9)
 % conc(index) = N0_wtPercent
 % radlifetime(index)= tauRad;
 
-lossdB = [.0000000001:.01:3]; %dB/m
+lossdB = [.0000001:.01:3]; %dB/m
 
 len = .1;
 dz = len/100;
@@ -41,7 +41,7 @@ E2 = [E21 E22 E23];
 g2 = 3;
 g1 = 4;
 
-core_radius = 3.1e-6; 
+core_radius = 6.2e-6; 
 Area = pi*core_radius^2; %m^2, pump area
 tauRad = 1.7e-3;
 c = 3e8;
@@ -71,7 +71,7 @@ crossSection(:,4) = cs_abs(:,2)./cs_ems(:,2);
 
 %waveleghth of laser/cooling pump
 dlam = 1e-9; %resolution of the signal spectrum
-lambdaP = 1030e-9;
+lambdaP = 1015e-9;
 lambdaS = [870e-9:dlam:1100e-9]; 
 %validWavelengths = find(ones(1,length(lambdaS)));
 freqP = c/lambdaP;
@@ -100,7 +100,7 @@ loss_b = lossdB/Nup*log(10)/10; %m^-1
 loss_bs = loss_b*0;%m^-1
 loss_ba = loss_b;%0; %m^-1
 
-N0_wtPercent = .5;%[0.00005:.00005:.001 .001:.005:.1 .1:.1:3 3:15];
+N0_wtPercent = 2;%[0.00005:.00005:.001 .001:.005:.1 .1:.1:3 3:15];
 N0 = N0_wtPercent*2.42e26;  %m^-3
 Nc = 6.47e27; %m^-3
 tauNonRad = 2*pi/9*tauRad*(Nc/N0)^2;%67.6e-3;%211.65e-3;%1e10;%
@@ -635,6 +635,15 @@ ylabel('Extracted heat per unit length (mW/m)');
 box on
 pbaspect([1.256 1 1])
 %grid on
+
+%dT vs absorptive loss
+figure(13)
+hold on
+grid on
+plot(lossdB,dTz(:,1));
+xlabel('Absorptive loss (dB/m)');
+ylabel('Change in temperature (K)');
+title('Temp change vs. absorptive loss');
 
 % %Maximum T in Vac vs. loss
 % figure(16)

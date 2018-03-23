@@ -9,7 +9,7 @@ clear all;
 
 len = .1;
 dz = len/500;
-Pp0 = 1000;
+Pp0 = [1:50]*1e-3;%.001:.0005:.01;%[0.0001:0.0005:.03];% 0.01:0.05:1];%100000;
 %Psforward0 = 0;
 %Psbackward0 = ones(21,1)*Pp0/21; %%GUESS THIS!!!!
 maxIterations = 5;
@@ -22,7 +22,7 @@ minGain = -2500; %if a signal wavelength has a gain that is less
 maxError = 1e-8;
 eliminationFactor = 1e4;
 
-core_radius = 40e-6; 
+core_radius =3.1e-6; 
 Area = pi*core_radius^2; %m^2, pump area
 tauRad = 1.7e-3;
 c = 3e8;
@@ -53,7 +53,7 @@ crossSection(:,4) = cs_abs(:,2)./cs_ems(:,2);
 %waveleghth of laser/cooling pump
 dlam = 2e-9; %resolution of the signal spectrum
 lambdaP = 1015e-9;
-lambdaS = 1015e-9:dlam:1100e-9; 
+lambdaS = 1000e-9:dlam:1100e-9; 
 %validWavelengths = find(ones(1,length(lambdaS)));
 freqP = c/lambdaP;
 freqS = c./lambdaS;
@@ -72,24 +72,24 @@ cs_eS = cs_ems(indexS,2).';
 
 lam = 1000e-9;
 NA = .13; 
-%V = 2*pi*core_radius/lam*NA;
-V = 2.44;
+V = 2*pi*core_radius/lam*NA;
+%V = 2.44;
 w = core_radius*(0.65+1.619/V^1.5+2.879/V^6);
 etta = 1-exp(-2*core_radius^2/w^2);
 
-N0_wtPercent = 1;%[0.00005:.00005:.001 .001:.005:.1 .1:.1:3 3:15];
+N0_wtPercent = 2;%[0.00005:.00005:.001 .001:.005:.1 .1:.1:3 3:15];
 N0 = N0_wtPercent*2.42e26;  %m^-3
 Nc = 6.47e27; %m^-3
 %%%Nc = .75e26; %m^-3 for silica
-tauNonRad = 1e10;%2*pi/9*tauRad*(Nc/N0)^2;%67.6e-3;%211.65e-3;%1e10;%
+tauNonRad = 2*pi/9*tauRad*(Nc/N0)^2;%67.6e-3;%211.65e-3;%1e10;%
 tauRatio = tauRad/tauNonRad;
 tau = tauRad*tauNonRad/(tauRad+tauNonRad);
 f = 1/Area;
 gamma = 1;
-totLoss = 0.00; %dB/m
+totLoss = 0.02; %dB/m
 loss_b = totLoss/etta*log(10)/10; %m^-1
-loss_bs = 0;%loss_b/4;%m^-1
-loss_ba = loss_b;%3*loss_b/4;%0; %m^-1
+loss_bs = loss_b/4;%m^-1
+loss_ba = 3*loss_b/4;%0; %m^-1
 IsatPa = h*freqP/cs_aP/tauRad;
 PsatPa = IsatPa*pi*w^2/2;
 IsatSa = h*freqS./cs_aS/tauRad;
@@ -100,6 +100,8 @@ PsatS = IsatS*pi*w^2/2;
 Am = pi*w^2/2;
 
 maxLoss = etta*cs_aP*N0*(tau/tauRad*freqF_SE/freqP-1)*10/log(10); %dB/m
+N0max = Nc*sqrt(2*pi/9*(lambdaP/lambdaF_SE/(loss_b/cs_aP/N0+1)-1))/2.42e26;
+
 
 % V = 1:0.01:10;
 % w = core_radius*(0.65+1.619./V.^1.5+2.879./V.^6);
@@ -113,7 +115,17 @@ maxLoss = etta*cs_aP*N0*(tau/tauRad*freqF_SE/freqP-1)*10/log(10); %dB/m
 % loss_ba = .0000000000000000001;
 
 QmaxNoLoss = -h*(tauRad/tau*freqP-freqF_SE)/(cs_aP+cs_eP)*Am*cs_aP*N0/tauRad*(-2*core_radius^2/w^2);
+QtotMax = QmaxNoLoss*len;
 QmaxNoLoss2 = -h*(tauRad/tau*freqP-freqF_SE)/(cs_aP+cs_eP)*Am*cs_aP*N0/tauRad*(-2);
+
+IsatA = h*freqP/cs_aP/tau;
+Aeff = pi*core_radius^2;
+alphaR = N0*(cs_aP - (cs_aP+cs_eP)*(1+cs_eP/cs_aP+Aeff*IsatA./Pp0).^-1);
+Pcool = Pp0.*(1-exp(-alphaR*len))*(tau/tauRad*lambdaP/lambdaF_SE-1);
+PabsKashyup = Pp0.*(1-exp(-alphaR*len));
+
+%test1 = tau/tauRad/h/freqP*Pp0*(1-exp(-alphaR*len))*h*(tauRad/tau*freqP-freqF_SE);
+%test2 = cs_aP/(cs_aP+cs_eP)*Am*N0/tauRad*(2*core_radius^2/w^2)*len*h*(tauRad/tau*freqP-freqF_SE);
 
 
 b = 67.3e-6; %m
@@ -192,6 +204,7 @@ avgdQz_dt2 = zeros(1,length(lambdaP));
 lambdaF_SL = zeros(1,length(Pp0)); %stores the mean flouresnce wavelength for each pump power calculated from the 
                                     %populations of each sublevel.
 dTz = zeros(length(Pp0),length(z));  %stores the change in temp at a location z along the fiber
+dTAirMax = zeros(1,length(Pp0));
 dTzVac = zeros(length(Pp0),length(z));  %stores the change in temp at a location z along the fiber in a vaccuum
 dTavg = zeros(1,length(Pp0)); %stores the average change in temperature across the fiber 
 dTVacAvg = zeros(1,length(Pp0)); %stores the average change in temperature across the fiber in a vaccuum. 
@@ -447,6 +460,7 @@ radius_c = 2.5e-3; %m
 chi = (1-emis_c)*emis_f*b/emis_c/radius_c;
 thermalC = 81.4; %W/m^2/K
 dTz(p,:) = dQz_dt2(p,:)/2/pi/b/thermalC; %K
+dTAirMax(p) = min(dTz(p,:)); 
 dTzVac(p,:) = (rTemp^4+dQz_dt2(p,:)*(1+chi)/(sb*2*pi*b*emis_f)).^0.25;
 dTVacAvg(p) = mean(dTzVac(p,:));
 dTVacMax(p) = min(dTzVac(p,:));
@@ -499,103 +513,103 @@ N1z = N0*ones(1,length(z))-N2z;
 % powerInCore = Pom(end)*ettaOM
 
 
-% %graphs
-%Pump power
-approx = Pp0(p)*exp(-cs_aP*N0*z*(1-exp(-2*core_radius^2/w^2)));
-figure(1)
-grid on
-hold on
-plot(z,Pp);
-%plot(z,log(approx));
-xlabel('z (m)');
-ylabel('Pp(z) (W)');
-title('Change in pump Power along fiber');
-legend('non approx','approx');
-% % 
-%forward signal
-figure(2)
-hold on
-grid on
-for i = validWavelengths
-    plot(z,Psforward(i,:),'DisplayName',sprintf('%g nm',lambdaS(i)*1e9));
-end
-xlabel('z (m)');
-ylabel('Forward ASE Power (W)');
-title('Change in Forward ASE Signal Along The Fiber');
-legend('show');
-
-%backward signal
-figure(3)
-hold on
-grid on
-for i = validWavelengths
-    plot(z,Psbackward(i,:),'DisplayName',sprintf('%g nm',lambdaS(i)*1e9));
-end
-xlabel('z (m)');
-ylabel('Backward ASE Power (W)');
-title('Change in Backward ASE Signal Along The Fiber');
-% legend('show')
-% 
-%pump and signals
-figure(4)
-hold on 
-grid on
-%plot(z,Pp);
-if length(lambdaS) > 1
-    plot(z,sum(Psforward));
-    plot(z,sum(Psbackward));
-else
-    plot(z,Psforward);
-    plot(z,Psbackward);
-end
-xlabel('z (m)');
-ylabel('Power (W)');
-title('Change in Power along fiber');
-legend('pump','forward signal','backward signal');
-
-%forward Signal Spectrum
-figure(5)
-hold on
-grid on
-PsforwardNorm = Psforward(:,length(z))*1e3/dlam/1e9;
-plot(lambdaS*1e9,PsforwardNorm,'DisplayName',sprintf('%g mW, mean = %g nm',Pp0(p)*1e3,lambdaFF_ASE*1e9));
-xlabel('wavelength (nm)');
-ylabel('power (mW/nm)');
-title('Normalized Spectrum of forward signal')
-% 
-%backward Signal Spectrum
-figure(6)
-hold on
-grid on
-PsbackwardNorm = Psbackward(:,1)*1e3/dlam/1e9;
-plot(lambdaS*1e9,PsbackwardNorm,'DisplayName',sprintf('%g mW, mean = %g nm',Pp0(p)*1e3,lambdaFB_ASE*1e9));
-xlabel('wavelength (nm)');
-ylabel('power (mW/nm)');
-title('Normalized Spectrum of backward signal')
-
-% %Signal Gain
-% figure(7) 
+% % %graphs
+% %Pump power
+% approx = Pp0(p)*exp(-cs_aP*N0*z*(1-exp(-2*core_radius^2/w^2)));
+% figure(1)
+% grid on
+% hold on
+% plot(z,Pp);
+% plot(z,approx);
+% xlabel('z (m)');
+% ylabel('Pp(z) (W)');
+% title('Change in pump Power along fiber');
+% legend('non approx','approx');
+% % % 
+% %forward signal
+% figure(2)
 % hold on
 % grid on
-% for i =1:length(lambdaS)
-%     plot(z,gain(i,:),'DisplayName',sprintf('%g nm',lambdaS(i)*1e9));
+% for i = validWavelengths
+%     plot(z,Psforward(i,:),'DisplayName',sprintf('%g nm',lambdaS(i)*1e9));
 % end
 % xlabel('z (m)');
-% ylabel('gain(z) (1/m)');
-% title('Signal gain along fiber');
-% legend('show')
+% ylabel('Forward ASE Power (W)');
+% title('Change in Forward ASE Signal Along The Fiber');
+% legend('show');
 % 
-% %Signal Gain vs. Wavelength
-% figure(13)
+% %backward signal
+% figure(3)
 % hold on
 % grid on
-% plot(lambdaS*1e9,avgGain)
-% plot(lambdaS*1e9,maxGain)
-% xlabel('wavelength (nm)');
-% ylabel('average gain(z) (1/m)');
-% title('Average/Max signal gain along fiber vs. wavelength');
-% legend('average gain','max gain');
+% for i = validWavelengths
+%     plot(z,Psbackward(i,:),'DisplayName',sprintf('%g nm',lambdaS(i)*1e9));
+% end
+% xlabel('z (m)');
+% ylabel('Backward ASE Power (W)');
+% title('Change in Backward ASE Signal Along The Fiber');
+% % legend('show')
+% % 
+% %pump and signals
+% figure(4)
+% hold on 
+% grid on
+% %plot(z,Pp);
+% if length(lambdaS) > 1
+%     plot(z,sum(Psforward));
+%     plot(z,sum(Psbackward));
+% else
+%     plot(z,Psforward);
+%     plot(z,Psbackward);
+% end
+% xlabel('z (m)');
+% ylabel('Power (W)');
+% title('Change in Power along fiber');
+% legend('pump','forward signal','backward signal');
 % 
+% %forward Signal Spectrum
+% figure(5)
+% hold on
+% grid on
+% PsforwardNorm = Psforward(:,length(z))*1e3/dlam/1e9;
+% plot(lambdaS*1e9,PsforwardNorm,'DisplayName',sprintf('%g mW, mean = %g nm',Pp0(p)*1e3,lambdaFF_ASE*1e9));
+% xlabel('wavelength (nm)');
+% ylabel('power (mW/nm)');
+% title('Normalized Spectrum of forward signal')
+% % 
+% %backward Signal Spectrum
+% figure(6)
+% hold on
+% grid on
+% PsbackwardNorm = Psbackward(:,1)*1e3/dlam/1e9;
+% plot(lambdaS*1e9,PsbackwardNorm,'DisplayName',sprintf('%g mW, mean = %g nm',Pp0(p)*1e3,lambdaFB_ASE*1e9));
+% xlabel('wavelength (nm)');
+% ylabel('power (mW/nm)');
+% title('Normalized Spectrum of backward signal')
+% 
+% % %Signal Gain
+% % figure(7) 
+% % hold on
+% % grid on
+% % for i =1:length(lambdaS)
+% %     plot(z,gain(i,:),'DisplayName',sprintf('%g nm',lambdaS(i)*1e9));
+% % end
+% % xlabel('z (m)');
+% % ylabel('gain(z) (1/m)');
+% % title('Signal gain along fiber');
+% % legend('show')
+% % 
+% % %Signal Gain vs. Wavelength
+% % figure(13)
+% % hold on
+% % grid on
+% % plot(lambdaS*1e9,avgGain)
+% % plot(lambdaS*1e9,maxGain)
+% % xlabel('wavelength (nm)');
+% % ylabel('average gain(z) (1/m)');
+% % title('Average/Max signal gain along fiber vs. wavelength');
+% % legend('average gain','max gain');
+% % 
 % %N2(z)
 % figure(10)
 % grid on
@@ -605,7 +619,7 @@ title('Normalized Spectrum of backward signal')
 % xlabel('z (m)');
 % ylabel('N2(z)/N0');
 % title('N2 along fiber');
-% % % 
+% % % % 
 % %dQ/dt as a function of z
 % figure(11)
 % %grid on 
@@ -620,14 +634,14 @@ title('Normalized Spectrum of backward signal')
 % % pbaspect([3.024 1 1])
 % 
 % % % % 
-%dT as a function of z
-figure(14)
-hold on
-box on
-plot(z,dTz(p,:),'DisplayName',sprintf('P_{pump} = %g mW',Pp0(p)*1e3));
-xlabel('Position z in fiber (m)');
-ylabel('Change in temperature (K)');
-title('Change in Temperature Along the Fiber in Air');
+% %dT as a function of z
+% figure(14)
+% hold on
+% box on
+% plot(z,dTz(p,:),'DisplayName',sprintf('P_{pump} = %g mW',Pp0(p)*1e3));
+% xlabel('Position z in fiber (m)');
+% ylabel('Change in temperature (K)');
+% title('Change in Temperature Along the Fiber in Air');
 
 % %dT in a vacuum as a function of z 
 % figure(14)
@@ -681,6 +695,15 @@ end
 % title('Maximum temperature change in a vacuum vs. pump power')
 % grid on
 
+%max T in Air vs. Pp0
+figure(17)
+hold on
+plot(Pp0,dTAirMax)
+xlabel('Pump Power (W)')
+ylabel('Maximum temperature change (K)')
+title('Maximum temperature change in a air vs. pump power')
+grid on
+
 
 
 % %total signal power vs. absorped pump power
@@ -697,22 +720,35 @@ hold on
 yyaxis left
 plot(Pp0*1e3,dQ_dt2*1e3);
 ylabel('Total heat extracted (mW)');
-yyaxis right
-plot(Pp0*1e3,dQ_dt2./Pabs*100)
-ylabel('Cooling efficiency (%)');
-xlabel('Pump power (mW)');
+% yyaxis right
+% plot(Pp0*1e3,dQ_dt2./Pabs*100)
+% ylabel('Cooling efficiency (%)');
+xlabel('Lanched pump power (mW)');
 title('Total heat extracted and cooling efficiency vs. pump power');
 box on
+pbaspect([3.37 1 1])
 
-% %max dQ/dt(z) vs. Pp0
-% figure(12)
-% grid on
-% hold on
-% plot(Pp0*1e3,maxdQz_dt2(1,:)*1e3);
-% xlabel('Launched pump power (mW)');
-% ylabel('Maximum heat extracted per unit length (mW/m)')
-% title('Maximum heat extracted in a vacuum vs input pump power');
-% pbaspect([3.024 1 1]);
+
+figure(13)
+hold on
+plot(Pp0,Pabs*1e3)
+plot(Pp0,PabsKashyup*1e3)
+legend('exact value','Kashyup approx')
+ylabel('absorbed power (mW)')
+xlabel('input power (W)')
+yyaxis right
+plot(Pp0,(PabsKashyup-Pabs)./Pabs*100)
+ylabel('percent difference')
+
+%max dQ/dt(z) vs. Pp0
+figure(12)
+grid on
+hold on
+plot(Pp0*1e3,maxdQz_dt2(1,:)*1e3);
+xlabel('Launched pump power (mW)');
+ylabel('Maximum heat extracted per unit length (mW/m)')
+title('Maximum heat extracted in a vacuum vs input pump power');
+pbaspect([3.024 1 1]);
 
 % %dQ/dt(z) at start vs. Pp0
 % figure(13)
@@ -766,7 +802,7 @@ box on
 % end
 % lambdaF_dig(p) = mean(lambdaFz_dig);
 
-maxLoss = cs_aP*N0*(tau/tauRad*freqF_SE/freqP-1); %1/m
+maxLoss = 10/log(10)*etta*cs_aP*N0*(tau/tauRad*freqF_SE/freqP-1); %1/m
 maxCooling = -(tauRad/tau*h*freqP-h*freqF_SE)/(cs_eP+cs_aP)*Am*cs_aP*N0/tauRad*(-2*core_radius^2/w^2);
 
 %find pump power such that the fiber has zero net temp change

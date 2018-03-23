@@ -4,7 +4,7 @@
 %Automatically discards signal wavelengths for which gain is too low
 %includes non-radiative term and loss
 
-close all;
+%close all;
 clear all;
 
 %set(0,'DefaultAxesFontSize',18)
@@ -77,7 +77,7 @@ end
 freqP = c./lambdaP;
 freqS = c./lambdaS;
 %dvS = zeros(1,length(lambdaS));
-dvS = c./(lambdaS-dlam/2)-c./(lambdaS+dlam/2); %zeros(1,length(lambdaS));%
+dvS = zeros(1,length(lambdaS));%c./(lambdaS-dlam/2)-c./(lambdaS+dlam/2); %zeros(1,length(lambdaS));%
 %cross sectional areas for a given wavelength
 
 indexP = NaN(size(lambdaP));

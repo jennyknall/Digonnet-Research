@@ -7,9 +7,9 @@
 close all;
 clear all;
 
-len = 1.3; %length of cavity (m)
+len = 1.5; %length of cavity (m)
 dz = len/300;
-Pp0 = 4.6;%[.8:.5:2 2:10:25];%.2:.1:1;%.2:.1:.5;%.1:.1:.5;%0.06:0.02:.20;%:0.1:1;%.01:.05:1;%[.09:.03:1 2 3]; %pump power (W)
+Pp0 = [2.5 15];%[.8:.5:2 2:10:25];%.2:.1:1;%.2:.1:.5;%.1:.1:.5;%0.06:0.02:.20;%:0.1:1;%.01:.05:1;%[.09:.03:1 2 3]; %pump power (W)
 loops = 30; %humber of loops for heat distribution equilization. allowed values: 1,2,3,4,6,7,9,13
 
 maxIterations = 200; %convergence iterations
@@ -20,7 +20,7 @@ errorf = NaN(1,maxIterations);
 
 %cavity parameters
 R1 = 1;
-R2 = .01;
+R2 = .5;
 t1 = 1-R1;
 t2 = 1-R2;
 
@@ -587,8 +587,17 @@ xlabel('Input Pump Power (W)');
 title('Output Signal vs. Input Pump Power');
 grid on
 % 
-%total signal power AND total heat generation vs. Pp0
+%avg temperature vs. PSout
 figure(17)
+hold on
+plot(PSout,dTavg)
+xlabel('Laser output Power (W)');
+ylabel('Average temperature change (K)');
+title('Avg Temp vs. Pout');
+grid on
+
+%total signal power AND total heat generation vs. Pp0
+figure(18)
 hold on
 yyaxis left
 plot(Pp0,PSout)

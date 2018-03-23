@@ -6,9 +6,9 @@
 close all;
 clear all;
 
-len = 3;
+len = 1;
 dz = len/300;
-Pp0 = 25;
+Pp0 = 1;
 maxIterations = 201;
 
 %ASE signal error
@@ -39,7 +39,7 @@ E2 = [E21 E22 E23];
 g2 = 3;
 g1 = 4;
 
-core_radius = 15e-6; 
+core_radius = 3.1e-6; 
 Area = pi*core_radius^2; %m^2, pump area
 tauRad = 1.7e-3;
 c = 3e8;
@@ -71,7 +71,7 @@ crossSection(:,4) = cs_abs(:,2)./cs_ems(:,2);
 dlam = 5e-9; %resolution of the signal spectrum
 lambdaP = 1015e-9;
 lambdaL = 1025e-9;
-lambdaS = [1015e-9:dlam:lambdaL-dlam lambdaL lambdaL+dlam:dlam:1100e-9];%[lambdaL:dlam:1150e-9];%[1035e-9:dlam:lambdaL-dlam lambdaL lambdaL+dlam:dlam:1150e-9]; %%MAYBE CHANGE THIS -- to make spacing even
+lambdaS = [1000e-9:dlam:lambdaL-dlam lambdaL lambdaL+dlam:dlam:1100e-9];%[lambdaL:dlam:1150e-9];%[1035e-9:dlam:lambdaL-dlam lambdaL lambdaL+dlam:dlam:1150e-9]; %%MAYBE CHANGE THIS -- to make spacing even
 freqP = c/lambdaP;
 freqS = c./lambdaS;
 dvS = c./(lambdaS-dlam/2)-c./(lambdaS+dlam/2); %zeros(1,length(lambdaS));%
@@ -90,12 +90,12 @@ cs_eS = cs_ems(indexS,2).';
 
 lam = 1000e-9;
 NA = .13; 
-%V = 2*pi*core_radius/lam*NA;
-V = 2.44;
+V = 2*pi*core_radius/lam*NA;
+%V = 2.44;
 w = core_radius*(0.65+1.619/V^1.5+2.879/V^6);
 etta = 1-exp(-2*core_radius^2/w^2);
 
-N0_wtPercent = 2;%[0.00005:.00005:.001 .001:.005:.1 .1:.1:3 3:15];
+N0_wtPercent = 1;%[0.00005:.00005:.001 .001:.005:.1 .1:.1:3 3:15];
 N0 = N0_wtPercent*2.42e26;  %m^-3
 Nc = 6.47e27; %m^-3
 tauNonRad = 2*pi/9*tauRad*(Nc/N0)^2;%67.6e-3;%211.65e-3;%1e10;%
@@ -103,7 +103,7 @@ tauRatio = tauRad/tauNonRad;
 tau = tauRad*tauNonRad/(tauRad+tauNonRad);
 f = 1/Area;
 gamma = 1;
-totLoss = 0.001; %dB/m
+totLoss = 0.02; %dB/m
 loss_b = totLoss/etta*log(10)/10; %m^-1
 loss_bs = loss_b/4;%m^-1
 loss_ba = 3*loss_b/4;%0; %m^-1
@@ -646,5 +646,14 @@ end
 % figure(9) %dQ/dt(z)
 % legend('show')
 % plot(z(maxdQz_dt2(2,:)),maxdQz_dt2(1,:));
+%avg temperature vs. PSout
+
+figure(15)
+hold on
+plot(PSout,dTavg)
+xlabel('Laser output Power (W)');
+ylabel('Average temperature change (K)');
+title('Avg Temp vs. Pout');
+grid on
 
 

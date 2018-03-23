@@ -1,4 +1,4 @@
-close all
+%close all
 clear all
 
 N0_wtPercent = [0.00005:.00005:.001 .001:.005:.1 .1:.01:4];
@@ -42,7 +42,7 @@ lam = 1000e-9;
 NA = .13; 
 V = 2*pi*core_radius/lam*NA;
 w = core_radius*(0.65+1.619/V^1.5+2.879/V^6);
-etta = 1-exp(-2*core_radius^2/w^2)
+etta = 1-exp(-2*core_radius^2/w^2);
 Am = pi*w^2/2;
 
 IsatPa = h*freqP/cs_aP/tauRad;
@@ -118,15 +118,15 @@ end
 figure(2)
 hold on
 box on
-plot(N0_wtPercent,loss90)
+plot(N0_wtPercent,loss90*1e3)
 %plot(N0_wtPercent,lossApproxMinus)
 %plot(N0_wtPercent,(lossApproxMinus-loss90)./loss90)
 %plot(N0_wtPercent,loss90approx)
 %plot(N0_wtPercent,(loss90approx-loss90)./loss90)
 xlabel('Yb concentration (wt% Yb)');
-ylabel('Absorptive loss for 90% cooling (dB/m)')
+ylabel('Absorptive loss for 90% cooling (dB/km)')
 %legend('exact','approx','error')
-ylim([0 max(loss90)])
+%ylim([0 max(loss90)])
 
 figure(3)
 box on
